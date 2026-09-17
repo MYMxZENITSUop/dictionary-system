@@ -1,0 +1,117 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f6f8;
+    color: #222;
+    min-height: 100vh;
+}
+
+.container {
+    width: 90%;
+    max-width: 800px;
+    margin: 50px auto;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    text-align: center;
+    color: #666;
+    margin-bottom: 35px;
+}
+
+.card {
+    background: white;
+    padding: 25px;
+    margin-bottom: 25px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.card h2 {
+    margin-bottom: 18px;
+    font-size: 20px;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+}
+
+input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 15px;
+    outline: none;
+}
+
+input:focus {
+    border-color: #333;
+}
+
+#kInput {
+    max-width: 100px;
+}
+
+button {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 6px;
+    background: #222;
+    color: white;
+    font-size: 15px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+button:hover {
+    background: #444;
+}
+
+#searchResult,
+#addResult {
+    margin-top: 15px;
+    font-weight: bold;
+}
+
+.suggestion {
+    padding: 12px;
+    margin-top: 8px;
+    background: #f1f3f5;
+    border-radius: 6px;
+}
+
+.no-results {
+    margin-top: 15px;
+    color: #777;
+}
+
+@media (max-width: 600px) {
+
+    .container {
+        width: 94%;
+        margin: 30px auto;
+    }
+
+    .input-group {
+        flex-direction: column;
+    }
+
+    #kInput {
+        max-width: none;
+    }
+
+    button {
+        width: 100%;
+    }
+}

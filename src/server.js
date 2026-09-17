@@ -1,4 +1,7 @@
 const http = require("http");
+const fs = require("fs");
+const path = require("path");
+
 const Dictionary = require("./dictionary");
 const sampleWords = require("./data");
 
@@ -11,26 +14,91 @@ for (const word of sampleWords) {
     dictionary.addWord(word);
 }
 
+
+// ==========================================
+// Serve Frontend Files
+// ==========================================
+
+function serveFile(filePath, res) {
+    fs.readFile(filePath, (error, data) => {
+
+        if (error) {
+            res.writeHead(404, {
+                "Content-Type": "text/plain"
+            });
+
+            res.end("File not found");
+
+            return;
+        }
+
+        const extension = path.extname(filePath);
+
+        const contentTypes = {
+            ".html": "text/html",
+            ".css": "text/css",
+            ".js": "application/javascript"
+        };
+
+        const contentType =
+            contentTypes[extension] || "text/plain";
+
+        res.writeHead(200, {
+            "Content-Type": contentType
+        });
+
+        res.end(data);
+    });
+}
+
+
 const server = http.createServer((req, res) => {
 
-    // JSON response
-    res.setHeader("Content-Type", "application/json");
-
     // ==========================================
-    // GET /
+    // Frontend
     // ==========================================
 
     if (req.method === "GET" && req.url === "/") {
-        res.writeHead(200);
 
-        res.end(
-            JSON.stringify({
-                message: "Dictionary API is running"
-            })
+        const filePath = path.join(
+            __dirname,
+            "../public/index.html"
         );
+
+        serveFile(filePath, res);
 
         return;
     }
+
+
+    if (req.method === "GET" && req.url === "/style.css") {
+
+        const filePath = path.join(
+            __dirname,
+            "../public/style.css"
+        );
+
+        serveFile(filePath, res);
+
+        return;
+    }
+
+
+    if (req.method === "GET" && req.url === "/app.js") {
+
+        const filePath = path.join(
+            __dirname,
+            "../public/app.js"
+        );
+
+        serveFile(filePath, res);
+
+        return;
+    }
+
+
+    // JSON response for API routes
+    res.setHeader("Content-Type", "application/json");
 
 
     // ==========================================
@@ -42,6 +110,7 @@ const server = http.createServer((req, res) => {
         req.method === "GET" &&
         req.url.startsWith("/search")
     ) {
+
         const url = new URL(
             req.url,
             `http://localhost:${PORT}`
@@ -50,6 +119,7 @@ const server = http.createServer((req, res) => {
         const word = url.searchParams.get("word");
 
         if (!word || !word.trim()) {
+
             res.writeHead(400);
 
             res.end(
@@ -61,7 +131,8 @@ const server = http.createServer((req, res) => {
             return;
         }
 
-        const result = dictionary.searchWord(word);
+        const result =
+            dictionary.searchWord(word);
 
         res.writeHead(200);
 
@@ -84,17 +155,21 @@ const server = http.createServer((req, res) => {
         req.method === "GET" &&
         req.url.startsWith("/suggestions")
     ) {
+
         const url = new URL(
             req.url,
             `http://localhost:${PORT}`
         );
 
-        const prefix = url.searchParams.get("prefix");
-        const requestedK = Number(
-            url.searchParams.get("k")
-        );
+        const prefix =
+            url.searchParams.get("prefix");
+
+        const requestedK =
+            Number(url.searchParams.get("k"));
+
 
         if (!prefix || !prefix.trim()) {
+
             res.writeHead(400);
 
             res.end(
@@ -106,10 +181,12 @@ const server = http.createServer((req, res) => {
             return;
         }
 
+
         if (
             !Number.isInteger(requestedK) ||
             requestedK <= 0
         ) {
+
             res.writeHead(400);
 
             res.end(
@@ -121,11 +198,13 @@ const server = http.createServer((req, res) => {
             return;
         }
 
+
         const suggestions =
             dictionary.getSuggestions(
                 prefix,
                 requestedK
             );
+
 
         res.writeHead(200);
 
@@ -150,22 +229,30 @@ const server = http.createServer((req, res) => {
         req.method === "POST" &&
         req.url === "/words"
     ) {
+
         let body = "";
+
 
         req.on("data", chunk => {
             body += chunk;
         });
 
+
         req.on("end", () => {
+
             try {
-                const data = JSON.parse(body);
+
+                const data =
+                    JSON.parse(body);
 
                 const { word } = data;
+
 
                 if (
                     typeof word !== "string" ||
                     !word.trim()
                 ) {
+
                     res.writeHead(400);
 
                     res.end(
@@ -177,10 +264,13 @@ const server = http.createServer((req, res) => {
                     return;
                 }
 
+
                 const result =
                     dictionary.addWord(word);
 
+
                 if (result === "already exists") {
+
                     res.writeHead(409);
 
                     res.end(
@@ -192,6 +282,7 @@ const server = http.createServer((req, res) => {
                     return;
                 }
 
+
                 res.writeHead(201);
 
                 res.end(
@@ -202,6 +293,7 @@ const server = http.createServer((req, res) => {
                 );
 
             } catch (error) {
+
                 res.writeHead(400);
 
                 res.end(
@@ -225,7 +317,9 @@ const server = http.createServer((req, res) => {
         req.method === "GET" &&
         req.url === "/words"
     ) {
-        const words = dictionary.getAllWords();
+
+        const words =
+            dictionary.getAllWords();
 
         res.writeHead(200);
 
@@ -249,14 +343,19 @@ const server = http.createServer((req, res) => {
         req.method === "DELETE" &&
         req.url.startsWith("/words/")
     ) {
-        const word = decodeURIComponent(
-            req.url.split("/")[2]
-        );
+
+        const word =
+            decodeURIComponent(
+                req.url.split("/")[2]
+            );
+
 
         const result =
             dictionary.deleteWord(word);
 
+
         if (!result) {
+
             res.writeHead(404);
 
             res.end(
@@ -267,6 +366,7 @@ const server = http.createServer((req, res) => {
 
             return;
         }
+
 
         res.writeHead(200);
 
@@ -295,7 +395,9 @@ const server = http.createServer((req, res) => {
 
 
 server.listen(PORT, () => {
+
     console.log(
         `Server running on http://localhost:${PORT}`
     );
+
 });

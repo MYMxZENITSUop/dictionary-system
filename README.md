@@ -224,6 +224,26 @@ The server runs on:
 http://localhost:3002
 ```
 
+### Web UI
+
+The project also includes a simple frontend built with HTML, CSS, and JavaScript.
+
+After starting the server, open:
+
+```text
+http://localhost:3002
+```
+
+The UI provides:
+
+- Exact word search
+- Live prefix suggestions ranked by search frequency
+- Custom `k` value for suggestions
+- Adding new words
+- Duplicate word handling
+
+The frontend communicates with the backend APIs using the browser `fetch` API.
+
 ### Test the APIs
 
 The APIs can be tested using Thunder Client, Postman, or another HTTP client.
@@ -339,3 +359,5 @@ This can be used to check the current words and their frequency values while tes
 - Sample words are loaded from `src/data.js` when the server starts.
 - The backend uses only Node.js built-in functionality.
 - No Express or other backend framework is used.
+- The UI uses plain HTML, CSS, and JavaScript.
+- No frontend framework or external UI library is used.

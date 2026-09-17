@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Dictionary Autocomplete</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>Dictionary Autocomplete</h1>
+
+        <p class="subtitle">
+            Search words, get prefix suggestions, and add new words.
+        </p>
+
+        <!-- Search Section -->
+        <section class="card">
+
+            <h2>Search Word</h2>
+
+            <div class="input-group">
+                <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="Enter a word..."
+                    autocomplete="off"
+                >
+
+                <button id="searchButton">
+                    Search
+                </button>
+            </div>
+
+            <p id="searchResult"></p>
+
+        </section>
+
+
+        <!-- Suggestions Section -->
+        <section class="card">
+
+            <h2>Prefix Suggestions</h2>
+
+            <div class="input-group">
+                <input
+                    type="text"
+                    id="prefixInput"
+                    placeholder="Enter a prefix..."
+                    autocomplete="off"
+                >
+
+                <input
+                    type="number"
+                    id="kInput"
+                    value="5"
+                    min="1"
+                    placeholder="k"
+                >
+            </div>
+
+            <div id="suggestions"></div>
+
+        </section>
+
+
+        <!-- Add Word Section -->
+        <section class="card">
+
+            <h2>Add New Word</h2>
+
+            <div class="input-group">
+
+                <input
+                    type="text"
+                    id="wordInput"
+                    placeholder="Enter a new word..."
+                    autocomplete="off"
+                >
+
+                <button id="addButton">
+                    Add Word
+                </button>
+
+            </div>
+
+            <p id="addResult"></p>
+
+        </section>
+
+    </div>
+
+    <script src="app.js"></script>
+
+</body>
+</html>
