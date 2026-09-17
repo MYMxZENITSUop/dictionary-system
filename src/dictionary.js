@@ -2,35 +2,39 @@ const Trie = require("./trie");
 
 class Dictionary {
     constructor() {
-        // Stores complete word records
-        // word -> { id, word, meaning }
+        // Primary storage:
+        // word -> { id, word, frequency }
         this.words = new Map();
 
-        // Trie for prefix-based autocomplete
+        // Prefix-search index
         this.trie = new Trie();
 
-        // Simple ID generator
+        // Generates unique IDs
         this.nextId = 1;
     }
 
-    addWord(word, meaning) {
+    // Normalize input words
+    normalizeWord(word) {
+        return word.trim().toLowerCase();
+    }
 
-        word = word.trim().toLowerCase();
-        meaning = meaning.trim();
+    // Add a new word
+    addWord(word) {
+        word = this.normalizeWord(word);
 
-        if (!word || !meaning) {
+        if (!word) {
             return null;
         }
 
-        // Prevent duplicate words
+        // Word already exists
         if (this.words.has(word)) {
-            return false;
+            return "already exists";
         }
 
         const wordData = {
             id: this.nextId++,
             word: word,
-            meaning: meaning
+            frequency: 1
         };
 
         // Store in Map
@@ -42,61 +46,68 @@ class Dictionary {
         return wordData;
     }
 
-    getWord(word) {
+    // Search for an exact word
+    searchWord(word) {
+        word = this.normalizeWord(word);
 
-        word = word.trim().toLowerCase();
+        const wordData = this.words.get(word);
 
-        return this.words.get(word) || null;
+        if (!wordData) {
+            return "NOT FOUND";
+        }
+
+        // Increase frequency because the word was searched
+        wordData.frequency++;
+
+        return "FOUND";
     }
 
-    getSuggestions(prefix, limit = 10) {
+    // Get prefix-based suggestions
+    getSuggestions(prefix, k) {
+        prefix = this.normalizeWord(prefix);
 
-        prefix = prefix.trim().toLowerCase();
+        if (!prefix) {
+            return [];
+        }
 
-        const words = this.trie.getSuggestions(
-            prefix,
-            limit
-        );
+        // Get all matching words from Trie
+        const matchingWords =
+            this.trie.getWordsWithPrefix(prefix);
 
-        return words.map(
+        // Convert words into complete records
+        const suggestions = matchingWords.map(
             word => this.words.get(word)
         );
+
+        // Sort by:
+        // 1. Higher frequency first
+        // 2. Alphabetical order when frequency is equal
+        suggestions.sort((a, b) => {
+            if (a.frequency !== b.frequency) {
+                return b.frequency - a.frequency;
+            }
+
+            return a.word.localeCompare(b.word);
+        });
+
+        // Return at most k suggestions
+        return suggestions.slice(0, k);
     }
 
+    // Get all words
     getAllWords() {
         return Array.from(this.words.values());
     }
 
-    updateWord(word, meaning) {
-
-        word = word.trim().toLowerCase();
-        meaning = meaning.trim();
-
-        const existingWord = this.words.get(word);
-
-        if (!existingWord || !meaning) {
-            return null;
-        }
-
-        existingWord.meaning = meaning;
-
-        this.words.set(word, existingWord);
-
-        return existingWord;
-    }
-
+    // Delete a word
     deleteWord(word) {
-
-        word = word.trim().toLowerCase();
+        word = this.normalizeWord(word);
 
         if (!this.words.has(word)) {
             return false;
         }
 
-        // Delete from Map
         this.words.delete(word);
-
-        // Delete from Trie
         this.trie.delete(word);
 
         return true;

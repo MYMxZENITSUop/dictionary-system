@@ -6,20 +6,18 @@ const PORT = 3002;
 
 const dictionary = new Dictionary();
 
-// Load sample dictionary data
-for (const item of sampleWords) {
-    dictionary.addWord(item.word, item.meaning);
+// Load sample words
+for (const word of sampleWords) {
+    dictionary.addWord(word);
 }
 
 const server = http.createServer((req, res) => {
 
-    // Set JSON response header
+    // JSON response
     res.setHeader("Content-Type", "application/json");
-
 
     // ==========================================
     // GET /
-    // Check if server is running
     // ==========================================
 
     if (req.method === "GET" && req.url === "/") {
@@ -36,48 +34,158 @@ const server = http.createServer((req, res) => {
 
 
     // ==========================================
+    // GET /search?word=apple
+    // Search for an exact word
+    // ==========================================
+
+    if (
+        req.method === "GET" &&
+        req.url.startsWith("/search")
+    ) {
+        const url = new URL(
+            req.url,
+            `http://localhost:${PORT}`
+        );
+
+        const word = url.searchParams.get("word");
+
+        if (!word || !word.trim()) {
+            res.writeHead(400);
+
+            res.end(
+                JSON.stringify({
+                    error: "Word is required"
+                })
+            );
+
+            return;
+        }
+
+        const result = dictionary.searchWord(word);
+
+        res.writeHead(200);
+
+        res.end(
+            JSON.stringify({
+                result: result
+            })
+        );
+
+        return;
+    }
+
+
+    // ==========================================
+    // GET /suggestions?prefix=app&k=3
+    // Prefix-based suggestions
+    // ==========================================
+
+    if (
+        req.method === "GET" &&
+        req.url.startsWith("/suggestions")
+    ) {
+        const url = new URL(
+            req.url,
+            `http://localhost:${PORT}`
+        );
+
+        const prefix = url.searchParams.get("prefix");
+        const requestedK = Number(
+            url.searchParams.get("k")
+        );
+
+        if (!prefix || !prefix.trim()) {
+            res.writeHead(400);
+
+            res.end(
+                JSON.stringify({
+                    error: "Prefix is required"
+                })
+            );
+
+            return;
+        }
+
+        if (
+            !Number.isInteger(requestedK) ||
+            requestedK <= 0
+        ) {
+            res.writeHead(400);
+
+            res.end(
+                JSON.stringify({
+                    error: "k must be a positive integer"
+                })
+            );
+
+            return;
+        }
+
+        const suggestions =
+            dictionary.getSuggestions(
+                prefix,
+                requestedK
+            );
+
+        res.writeHead(200);
+
+        res.end(
+            JSON.stringify({
+                data: suggestions.map(
+                    item => item.word
+                )
+            })
+        );
+
+        return;
+    }
+
+
+    // ==========================================
     // POST /words
     // Add a new word
     // ==========================================
 
-    if (req.method === "POST" && req.url === "/words") {
-
+    if (
+        req.method === "POST" &&
+        req.url === "/words"
+    ) {
         let body = "";
 
-        req.on("data", (chunk) => {
+        req.on("data", chunk => {
             body += chunk;
         });
 
         req.on("end", () => {
-
             try {
                 const data = JSON.parse(body);
 
-                const { word, meaning } = data;
+                const { word } = data;
 
-                if (!word || !meaning) {
+                if (
+                    typeof word !== "string" ||
+                    !word.trim()
+                ) {
                     res.writeHead(400);
 
                     res.end(
                         JSON.stringify({
-                            error: "Word and meaning are required"
+                            error: "Word is required"
                         })
                     );
 
                     return;
                 }
 
-                const result = dictionary.addWord(
-                    word,
-                    meaning
-                );
+                const result =
+                    dictionary.addWord(word);
 
-                if (!result) {
+                if (result === "already exists") {
                     res.writeHead(409);
 
                     res.end(
                         JSON.stringify({
-                            error: "Word already exists"
+                            message: "already exists"
                         })
                     );
 
@@ -88,13 +196,12 @@ const server = http.createServer((req, res) => {
 
                 res.end(
                     JSON.stringify({
-                        message: "Word added successfully",
+                        message: "added",
                         data: result
                     })
                 );
 
             } catch (error) {
-
                 res.writeHead(400);
 
                 res.end(
@@ -114,8 +221,10 @@ const server = http.createServer((req, res) => {
     // Get all words
     // ==========================================
 
-    if (req.method === "GET" && req.url === "/words") {
-
+    if (
+        req.method === "GET" &&
+        req.url === "/words"
+    ) {
         const words = dictionary.getAllWords();
 
         res.writeHead(200);
@@ -132,147 +241,6 @@ const server = http.createServer((req, res) => {
 
 
     // ==========================================
-    // GET /suggestions?prefix=app&limit=10
-    // Prefix-based autocomplete
-    // ==========================================
-
-    if (
-        req.method === "GET" &&
-        req.url.startsWith("/suggestions")
-    ) {
-
-        const url = new URL(
-            req.url,
-            `http://localhost:${PORT}`
-        );
-
-        const prefix = url.searchParams.get("prefix");
-
-        // Prefix is required
-        if (!prefix || !prefix.trim()) {
-            res.writeHead(400);
-
-            res.end(
-                JSON.stringify({
-                    error: "Prefix is required"
-                })
-            );
-
-            return;
-        }
-
-        // Read limit from query parameter
-        const requestedLimit =
-            Number(url.searchParams.get("limit")) || 10;
-
-        // Keep limit between 1 and 50
-        const limit = Math.min(
-            Math.max(requestedLimit, 1),
-            50
-        );
-
-        // Get suggestions from Dictionary
-        const suggestions = dictionary.getSuggestions(
-            prefix,
-            limit
-        );
-
-        res.writeHead(200);
-
-        res.end(
-            JSON.stringify({
-                prefix: prefix.trim().toLowerCase(),
-                count: suggestions.length,
-                data: suggestions
-            })
-        );
-
-        return;
-    }
-
-
-    // ==========================================
-    // PUT /words/:word
-    // Update a word's meaning
-    // ==========================================
-
-    if (
-        req.method === "PUT" &&
-        req.url.startsWith("/words/")
-    ) {
-
-        const word = decodeURIComponent(
-            req.url.split("/")[2]
-        );
-
-        let body = "";
-
-        req.on("data", (chunk) => {
-            body += chunk;
-        });
-
-        req.on("end", () => {
-
-            try {
-                const data = JSON.parse(body);
-
-                const { meaning } = data;
-
-                if (!meaning) {
-                    res.writeHead(400);
-
-                    res.end(
-                        JSON.stringify({
-                            error: "Meaning is required"
-                        })
-                    );
-
-                    return;
-                }
-
-                const result = dictionary.updateWord(
-                    word,
-                    meaning
-                );
-
-                if (!result) {
-                    res.writeHead(404);
-
-                    res.end(
-                        JSON.stringify({
-                            error: "Word not found"
-                        })
-                    );
-
-                    return;
-                }
-
-                res.writeHead(200);
-
-                res.end(
-                    JSON.stringify({
-                        message: "Word updated successfully",
-                        data: result
-                    })
-                );
-
-            } catch (error) {
-
-                res.writeHead(400);
-
-                res.end(
-                    JSON.stringify({
-                        error: "Invalid JSON"
-                    })
-                );
-            }
-        });
-
-        return;
-    }
-
-
-    // ==========================================
     // DELETE /words/:word
     // Delete a word
     // ==========================================
@@ -281,12 +249,12 @@ const server = http.createServer((req, res) => {
         req.method === "DELETE" &&
         req.url.startsWith("/words/")
     ) {
-
         const word = decodeURIComponent(
             req.url.split("/")[2]
         );
 
-        const result = dictionary.deleteWord(word);
+        const result =
+            dictionary.deleteWord(word);
 
         if (!result) {
             res.writeHead(404);
@@ -304,47 +272,7 @@ const server = http.createServer((req, res) => {
 
         res.end(
             JSON.stringify({
-                message: "Word deleted successfully"
-            })
-        );
-
-        return;
-    }
-
-
-    // ==========================================
-    // GET /words/:word
-    // Get a specific word
-    // ==========================================
-
-    if (
-        req.method === "GET" &&
-        req.url.startsWith("/words/")
-    ) {
-
-        const word = decodeURIComponent(
-            req.url.split("/")[2]
-        );
-
-        const result = dictionary.getWord(word);
-
-        if (!result) {
-            res.writeHead(404);
-
-            res.end(
-                JSON.stringify({
-                    error: "Word not found"
-                })
-            );
-
-            return;
-        }
-
-        res.writeHead(200);
-
-        res.end(
-            JSON.stringify({
-                data: result
+                message: "deleted"
             })
         );
 

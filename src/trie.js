@@ -2,6 +2,7 @@ class TrieNode {
     constructor() {
         this.children = new Map();
         this.isEndOfWord = false;
+        this.word = null;
     }
 }
 
@@ -10,6 +11,7 @@ class Trie {
         this.root = new TrieNode();
     }
 
+    // Insert a word into the Trie
     insert(word) {
         let currentNode = this.root;
 
@@ -22,8 +24,10 @@ class Trie {
         }
 
         currentNode.isEndOfWord = true;
+        currentNode.word = word;
     }
 
+    // Check whether a complete word exists in the Trie
     search(word) {
         let currentNode = this.root;
 
@@ -38,68 +42,57 @@ class Trie {
         return currentNode.isEndOfWord;
     }
 
-    getSuggestions(prefix, limit = 10) {
+    // Get the Trie node corresponding to a prefix
+    getPrefixNode(prefix) {
         let currentNode = this.root;
 
-        // Find the node corresponding to the prefix
         for (const char of prefix) {
             if (!currentNode.children.has(char)) {
-                return [];
+                return null;
             }
 
             currentNode = currentNode.children.get(char);
         }
 
-        const suggestions = [];
-
-        // Collect words below the prefix node
-        this.collectWords(
-            currentNode,
-            prefix,
-            suggestions,
-            limit
-        );
-
-        return suggestions;
+        return currentNode;
     }
 
-    collectWords(node, currentWord, suggestions, limit) {
-
-        // Stop once we have enough suggestions
-        if (suggestions.length >= limit) {
-            return;
-        }
-
+    // Collect all words below a given Trie node
+    collectWords(node, words) {
         if (node.isEndOfWord) {
-            suggestions.push(currentWord);
+            words.push(node.word);
         }
 
-        for (const [char, childNode] of node.children) {
-
-            if (suggestions.length >= limit) {
-                break;
-            }
-
-            this.collectWords(
-                childNode,
-                currentWord + char,
-                suggestions,
-                limit
-            );
+        for (const childNode of node.children.values()) {
+            this.collectWords(childNode, words);
         }
     }
 
+    // Get all words that start with the given prefix
+    getWordsWithPrefix(prefix) {
+        const prefixNode = this.getPrefixNode(prefix);
+
+        if (!prefixNode) {
+            return [];
+        }
+
+        const words = [];
+
+        this.collectWords(prefixNode, words);
+
+        return words;
+    }
+
+    // Delete a word from the Trie
     delete(word) {
         const deleteRecursive = (node, index) => {
-
-            // Reached the end of the word
             if (index === word.length) {
-
                 if (!node.isEndOfWord) {
                     return false;
                 }
 
                 node.isEndOfWord = false;
+                node.word = null;
 
                 return node.children.size === 0;
             }
@@ -107,7 +100,6 @@ class Trie {
             const char = word[index];
             const childNode = node.children.get(char);
 
-            // Word does not exist
             if (!childNode) {
                 return false;
             }
